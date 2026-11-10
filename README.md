@@ -13,5 +13,3 @@ Open \`index.html\` or serve with \`python -m http.server 8000\`.
 
 ## Tests
 \`node test-collision.js\` validates overlap, edge-only contact, and invalid rectangles. \`node --check sketch.js\` checks JavaScript syntax.
-
-Original project: [SakshamJain17/programe-Algorithms](https://github.com/SakshamJain17/programe-Algorithms). Adapted for Aadhar-Gupta-0/ALGO.
