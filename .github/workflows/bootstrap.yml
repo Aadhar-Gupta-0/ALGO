@@ -1,0 +1,135 @@
+name: Import and improve ALGO
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/bootstrap.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Import pinned source and test improved collision demo
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --quiet --depth 1 --branch master 'https://github.com/SakshamJain17/programe-Algorithms.git' "$RUNNER_TEMP/upstream"
+          test "$(git -C "$RUNNER_TEMP/upstream" rev-parse HEAD)" = "f5405070e09f044f18ce87b770e171b0e5a13387"
+          rsync -a --exclude '.git' --exclude '.github' "$RUNNER_TEMP/upstream/" ./
+          python - <<'PY'
+          from pathlib import Path
+          Path("collision.js").write_text("""(function (root) {
+            'use strict';
+            function rectanglesOverlap(a, b) {
+              for (const r of [a, b]) {
+                if (!Number.isFinite(r.x) || !Number.isFinite(r.y) || !Number.isFinite(r.width) || !Number.isFinite(r.height) || r.width <= 0 || r.height <= 0) return false;
+              }
+              return Math.abs(a.x - b.x) < (a.width + b.width) / 2 &&
+                     Math.abs(a.y - b.y) < (a.height + b.height) / 2;
+            }
+            root.rectanglesOverlap = rectanglesOverlap;
+            if (typeof module !== 'undefined') module.exports = { rectanglesOverlap };
+          })(typeof globalThis !== 'undefined' ? globalThis : this);
+          """)
+          Path("sketch.js").write_text("""// Interactive axis-aligned bounding box (AABB) collision visualizer.
+          var movingRect, fixedRect, isPointerMode = true;
+          var collisions = 0, wasOverlapping = false;
+          function setup() {
+            var canvas = createCanvas(800, 410);
+            canvas.parent('demo');
+            fixedRect = createSprite(470, 210, 145, 120);
+            movingRect = createSprite(180, 180, 130, 95);
+          }
+          function mouseMoved() { isPointerMode = true; }
+          function touchMoved() { isPointerMode = true; return false; }
+          function keyPressed() {
+            if ([37, 38, 39, 40].indexOf(keyCode) !== -1) isPointerMode = false;
+            if (key === 'r' || key === 'R') { collisions = 0; wasOverlapping = false; }
+          }
+          function draw() {
+            background(245, 248, 252);
+            if (isPointerMode && mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
+              movingRect.position.x = mouseX;
+              movingRect.position.y = mouseY;
+            } else if (!isPointerMode) {
+              if (keyIsDown(LEFT_ARROW)) movingRect.position.x -= 4;
+              if (keyIsDown(RIGHT_ARROW)) movingRect.position.x += 4;
+              if (keyIsDown(UP_ARROW)) movingRect.position.y -= 4;
+              if (keyIsDown(DOWN_ARROW)) movingRect.position.y += 4;
+            }
+            movingRect.position.x = constrain(movingRect.position.x, movingRect.width / 2, width - movingRect.width / 2);
+            movingRect.position.y = constrain(movingRect.position.y, movingRect.height / 2, height - movingRect.height / 2);
+            const overlapping = rectanglesOverlap(
+              { x: fixedRect.position.x, y: fixedRect.position.y, width: fixedRect.width, height: fixedRect.height },
+              { x: movingRect.position.x, y: movingRect.position.y, width: movingRect.width, height: movingRect.height }
+            );
+            if (overlapping && !wasOverlapping) collisions++;
+            wasOverlapping = overlapping;
+            fixedRect.shapeColor = overlapping ? color(255, 199, 93) : color(87, 111, 233);
+            movingRect.shapeColor = overlapping ? color(250, 83, 111) : color(55, 181, 144);
+            drawSprites();
+            noStroke(); fill(25, 40, 65); textSize(18);
+            text(overlapping ? 'COLLISION DETECTED' : 'NO COLLISION', 18, 30);
+            textSize(13); text('Collision entries: ' + collisions, 18, 52);
+            fill(255, 255, 255, 210); rect(16, height - 45, 290, 28, 6);
+            fill(45, 55, 70); textSize(12); text('AABB: overlapping along X AND Y', 25, height - 26);
+          }
+          """)
+          Path("index.html").write_text("""<!doctype html>
+          <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>ALGO · Collision Lab</title><meta name="description" content="An interactive axis-aligned bounding box collision detection learning lab.">
+          <link rel="stylesheet" href="style.css">
+          <script src="p5.js"></script><script src="p5.dom.min.js"></script><script src="p5.sound.min.js"></script><script src="p5.play.js"></script>
+          <script src="collision.js"></script></head>
+          <body><main><span class="tag">INTERACTIVE ALGORITHM LAB</span><h1>ALGO<span>.</span></h1>
+          <p class="lede">Move the green rectangle into the blue one to discover how <strong>AABB collision detection</strong> works.</p>
+          <div id="demo" role="img" aria-label="Interactive collision visualization; move your mouse or use arrow keys."></div>
+          <div class="details"><div><strong>Move</strong><p>Pointer, touch, or arrow keys</p></div><div><strong>Detect</strong><p>Overlap on both the X and Y axes</p></div><div><strong>Reset</strong><p>Press R to clear collision count</p></div></div>
+          <p class="formula">Collision ⇔ |x₁ − x₂| &lt; (w₁+w₂)/2 <em>and</em> |y₁ − y₂| &lt; (h₁+h₂)/2</p>
+          </main><script src="sketch.js"></script></body></html>
+          """)
+          Path("style.css").write_text("""*{box-sizing:border-box}html,body{margin:0}body{font-family:system-ui,Arial,sans-serif;color:#17243d;background:linear-gradient(140deg,#f1f5ff,#fdfdfd);padding:32px 16px;min-height:100vh}main{max-width:900px;margin:auto}.tag{color:#5c61b8;font-size:12px;letter-spacing:.18em;font-weight:800}h1{font-size:clamp(50px,9vw,88px);letter-spacing:-.09em;margin:5px 0}h1 span{color:#596be7}.lede{line-height:1.6;max-width:700px;color:#48566d}#demo{border:2px solid #24324b;border-radius:18px;box-shadow:12px 12px 0 #dde4fb;overflow:hidden;margin:26px 0}canvas{display:block;width:100%!important;height:auto!important;touch-action:none}.details{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}.details>div{background:white;padding:18px;border-radius:14px;border:1px solid #dfe5f2}.details p{margin:6px 0 0;color:#52617b;font-size:14px}.formula{color:#45526c;background:#fff;padding:18px;border-left:4px solid #596be7;border-radius:6px;line-height:1.6}@media(max-width:600px){.details{grid-template-columns:1fr}}
+          """)
+          Path("test-collision.js").write_text("""const assert = require('node:assert/strict');
+          const {rectanglesOverlap} = require('./collision.js');
+          const a = {x:0,y:0,width:10,height:10};
+          assert.equal(rectanglesOverlap(a,{x:0,y:0,width:10,height:10}),true);
+          assert.equal(rectanglesOverlap(a,{x:9,y:0,width:10,height:10}),true);
+          assert.equal(rectanglesOverlap(a,{x:10,y:0,width:10,height:10}),false);
+          assert.equal(rectanglesOverlap(a,{x:0,y:10,width:10,height:10}),false);
+          assert.equal(rectanglesOverlap(a,{x:0,y:0,width:-1,height:10}),false);
+          assert.equal(rectanglesOverlap(a,{x:NaN,y:0,width:10,height:10}),false);
+          console.log('6 collision checks passed');
+          """)
+          Path("README.md").write_text("""# ALGO — Collision Detection Lab
+          
+          An interactive educational demonstration of **axis-aligned bounding box (AABB)** collision detection, built with p5.js and p5.play. This edition turns a simple moving-rectangle demo into a responsive learning lab.
+          
+          ## Features
+          - Move a rectangle with a pointer, touch, or arrow keys.
+          - See collisions with immediate visual feedback.
+          - Live count of times collision begins; press **R** to reset.
+          - Separate, tested AABB collision function.
+          
+          ## Run
+          Open \`index.html\` or serve with \`python -m http.server 8000\`.
+          
+          ## Tests
+          \`node test-collision.js\` validates overlap, edge-only contact, and invalid rectangles. \`node --check sketch.js\` checks JavaScript syntax.
+          
+          Original project: [SakshamJain17/programe-Algorithms](https://github.com/SakshamJain17/programe-Algorithms). Adapted for Aadhar-Gupta-0/ALGO.
+          """)
+          
+          PY
+          node --check sketch.js
+          node test-collision.js
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Import ALGO and add interactive collision lab'
+          git push origin HEAD:main
