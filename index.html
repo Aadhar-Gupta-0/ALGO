@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ALGO · Collision Lab</title><meta name="description" content="An interactive axis-aligned bounding box collision detection learning lab.">
+<link rel="stylesheet" href="style.css">
+<script src="p5.js"></script><script src="p5.dom.min.js"></script><script src="p5.sound.min.js"></script><script src="p5.play.js"></script>
+<script src="collision.js"></script></head>
+<body><main><span class="tag">INTERACTIVE ALGORITHM LAB</span><h1>ALGO<span>.</span></h1>
+<p class="lede">Move the green rectangle into the blue one to discover how <strong>AABB collision detection</strong> works.</p>
+<div id="demo" role="img" aria-label="Interactive collision visualization; move your mouse or use arrow keys."></div>
+<div class="details"><div><strong>Move</strong><p>Pointer, touch, or arrow keys</p></div><div><strong>Detect</strong><p>Overlap on both the X and Y axes</p></div><div><strong>Reset</strong><p>Press R to clear collision count</p></div></div>
+<p class="formula">Collision ⇔ |x₁ − x₂| &lt; (w₁+w₂)/2 <em>and</em> |y₁ − y₂| &lt; (h₁+h₂)/2</p>
+</main><script src="sketch.js"></script></body></html>

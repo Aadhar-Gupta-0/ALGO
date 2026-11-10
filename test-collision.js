@@ -1,0 +1,10 @@
+const assert = require('node:assert/strict');
+const {rectanglesOverlap} = require('./collision.js');
+const a = {x:0,y:0,width:10,height:10};
+assert.equal(rectanglesOverlap(a,{x:0,y:0,width:10,height:10}),true);
+assert.equal(rectanglesOverlap(a,{x:9,y:0,width:10,height:10}),true);
+assert.equal(rectanglesOverlap(a,{x:10,y:0,width:10,height:10}),false);
+assert.equal(rectanglesOverlap(a,{x:0,y:10,width:10,height:10}),false);
+assert.equal(rectanglesOverlap(a,{x:0,y:0,width:-1,height:10}),false);
+assert.equal(rectanglesOverlap(a,{x:NaN,y:0,width:10,height:10}),false);
+console.log('6 collision checks passed');
