@@ -38,6 +38,7 @@ function draw() {
   noStroke(); fill(25, 40, 65); textSize(18);
   text(overlapping ? 'COLLISION DETECTED' : 'NO COLLISION', 18, 30);
   textSize(13); text('Collision entries: ' + collisions, 18, 52);
+  text('Overlap area: ' + Math.round(overlapArea({x: fixedRect.position.x,y: fixedRect.position.y,width: fixedRect.width,height: fixedRect.height},{x: movingRect.position.x,y: movingRect.position.y,width: movingRect.width,height: movingRect.height})) + ' px²', 18, 74);
   fill(255, 255, 255, 210); rect(16, height - 45, 290, 28, 6);
   fill(45, 55, 70); textSize(12); text('AABB: overlapping along X AND Y', 25, height - 26);
 }
